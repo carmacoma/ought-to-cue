@@ -21,6 +21,7 @@ add_library(otc_core
   src/core/compositor.cpp
   src/core/scroll_source.cpp
   src/sinks/headless_sink.cpp
+  src/sinks/output_report.cpp
 )
 target_include_directories(otc_core PUBLIC src)
 find_package(Threads REQUIRED)

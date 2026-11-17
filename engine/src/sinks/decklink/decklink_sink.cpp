@@ -468,5 +468,7 @@ DeckLinkStats DeckLinkSink::stats() const
 	return st;
 }
 
+bool DeckLinkSink::playing() const { return impl_->playing; }
+
 std::string DeckLinkSink::deviceName() const { return impl_->device ? nameOf(impl_->device.get()) : std::string(); }
 }  // namespace otc

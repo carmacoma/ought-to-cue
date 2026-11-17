@@ -5,7 +5,8 @@ and/or HDMI through a Blackmagic DeckLink card, scrolled by an operator with a j
 works in a web app; a server on a Linux playout machine drives the card. Design:
 [`docs/superpowers/specs/2026-11-17-autocue-design.md`](docs/superpowers/specs/2026-11-17-autocue-design.md).
 
-**Status:** stage 1, the C++ engine and a scroll test for judging smoothness on a real card.
+**Status:** stage 1, the C++ engine and a scroll test for judging smoothness on a real card. The
+hardware test procedure is [`docs/SCROLL-TEST.md`](docs/SCROLL-TEST.md).
 
 ## Build
 
@@ -20,3 +21,12 @@ That builds everything except DeckLink output. With the SDK headers in `sdk/incl
 ```bash
 cmake -S engine -B build-dl -DOTC_DECKLINK_SDK=$PWD/sdk/include && cmake --build build-dl
 ```
+
+## Scroll test without a card
+
+```bash
+./build/ought-scrolltest --sink headless --pattern text --speed 120 --frames 50 --dump /tmp/otc --dump-every 10
+```
+
+writes every tenth frame as a PGM image. `engine/tools/make_text_strip.sh script.txt strip.pgm` turns a text file
+into a strip for `--strip`.

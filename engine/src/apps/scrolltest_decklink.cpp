@@ -11,6 +11,7 @@
 #include <string>
 
 #include "sinks/decklink/decklink_sink.h"
+#include "sinks/output_report.h"
 
 namespace otc
 {
@@ -116,6 +117,8 @@ void apply(Key key, ScrollSource& src)
 	}
 }
 
+OutputCounts countsOf(const DeckLinkStats& st) { return {st.scheduled, st.completed, st.late, st.dropped, st.flushed}; }
+
 void printStatus(const VideoMode& mode, int buffer, const ScrollSource& src, const DeckLinkStats& st, bool newline)
 {
 	std::printf("\r%s %s buffer=%d speed=%.0f (target %.0f) px/s pos=%.1f  frames=%llu late=%llu dropped=%llu "
@@ -154,9 +157,13 @@ int runDeckLinkScrollTest(ScrollSource& src, const VideoMode& mode, int device, 
 	else
 		std::printf("stdin is not a terminal: no keyboard control (Ctrl-C to stop)\n");
 
+	// In a terminal: a live status line. Redirected to a file: a report line every 10 s, in the format
+	// summarize_run.sh (decklinkExperiments) reads, so loopback runs can be checked with it.
+	const bool tty = isatty(STDOUT_FILENO);
 	using Clock = std::chrono::steady_clock;
 	const auto t0 = Clock::now();
 	auto nextStatus = t0;
+	bool announced = false;
 	while (!gStop)
 	{
 		if (seconds > 0 && std::chrono::duration<double>(Clock::now() - t0).count() >= seconds)
@@ -165,20 +172,29 @@ int runDeckLinkScrollTest(ScrollSource& src, const VideoMode& mode, int device, 
 		if (key == Key::Quit)
 			break;
 		apply(key, src);
-		if (Clock::now() >= nextStatus || key != Key::None)
+		if (!announced && sink.playing())
 		{
-			printStatus(mode, bufferFrames, src, sink.stats(), false);
-			if (Clock::now() >= nextStatus)
-				nextStatus += std::chrono::seconds(1);
+			announced = true;
+			std::printf("%s%s\n", tty ? "\r\x1b[K" : "", startedLine(bufferFrames, localStamp()).c_str());
+			std::fflush(stdout);
 		}
+		const bool due = Clock::now() >= nextStatus;
+		if (tty && (due || key != Key::None))
+			printStatus(mode, bufferFrames, src, sink.stats(), false);
+		else if (!tty && due)
+		{
+			const DeckLinkStats st = sink.stats();
+			std::printf("%s speed=%.0f pos=%.1f\n", periodicReportLine(countsOf(st), st.buffered, localStamp()).c_str(),
+			            src.speed(), src.position());
+			std::fflush(stdout);
+		}
+		if (due)
+			nextStatus += std::chrono::seconds(tty ? 1 : 10);
 	}
 	sink.stop();
-	printStatus(mode, bufferFrames, src, sink.stats(), true);
-	const DeckLinkStats st = sink.stats();
-	std::printf("FINAL scheduled=%llu ok=%llu late=%llu dropped=%llu flushed=%llu\n",
-	            static_cast<unsigned long long>(st.scheduled), static_cast<unsigned long long>(st.completed),
-	            static_cast<unsigned long long>(st.late), static_cast<unsigned long long>(st.dropped),
-	            static_cast<unsigned long long>(st.flushed));
+	if (tty)
+		printStatus(mode, bufferFrames, src, sink.stats(), true);
+	std::printf("%s\n", finalReportLine(countsOf(sink.stats()), localStamp()).c_str());
 	return 0;
 }
 }  // namespace otc

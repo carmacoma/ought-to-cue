@@ -38,6 +38,7 @@ public:
 	// DisableVideoOutput (the spike's stop sequence).
 	void stop();
 	DeckLinkStats stats() const;
+	bool playing() const;  // true once pre-roll finished and scheduled playback started
 	std::string deviceName() const;
 
 	struct Impl;  // public only so the SDK callback class in the .cpp can name it

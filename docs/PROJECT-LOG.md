@@ -16,3 +16,15 @@ Standing decisions and conventions. Short; newest last within each section.
 - 1080i50 by default; 1080p25, 1080p50, 1080i59.94 selectable.
 - Build order: stage 1 engine and hardware scroll test; then a minimum version; then preview, other formats,
   jog wheel.
+
+## Status
+
+- 2026-11-17: stage 1 built (engine core, `ought-scrolltest`, headless and DeckLink sinks). Waiting on the hardware
+  test (`docs/SCROLL-TEST.md`) to choose the slow-motion method (`linear` or `wholeline`) and the buffer depth.
+
+## Conventions
+
+- The scroll test's log lines match `decklinkExperiments/loopback/tools/summarize_run.sh` ("playback started",
+  report lines with `late=N dropped=N`, `FINAL ... outstanding=N`), so loopback runs are checked with that tool.
+- `engine/tools/make_text_strip.sh` renders each paragraph separately: Ubuntu's ImageMagick policy blocks
+  `caption:@file` and caps image size, and `caption` fails on some multi-paragraph text.
