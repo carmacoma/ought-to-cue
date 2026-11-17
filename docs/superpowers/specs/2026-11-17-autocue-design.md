@@ -90,7 +90,7 @@ can't get wrong.
                                   ┌────────────▼──────────────┐
                                   │ engine (C++)              │
                                   │  - scroll motion per field│
-                                  │  - compose frame, mirror, │
+                                  │  - compose frame,         │
                                   │    reading-line marker    │
                                   │  - sinks: DeckLink /      │
                                   │    window / headless      │
@@ -173,7 +173,8 @@ position:
 ### Outputs (sinks)
 
 - **DeckLink:** scheduled playback on one DeckLink output, the same
-  unmirrored picture to SDI and HDMI where the card has both. Device and format chosen in settings.
+  unmirrored picture to SDI and HDMI where the card has both. Device and
+  format chosen in settings.
 - **Window:** a desktop window, for developing on a machine without a card.
 - **Headless:** no display; frames can be written to image files for tests
   and checked against expected images.
@@ -222,8 +223,8 @@ wheel → server → engine needs no special latency handling.
 - Live preview of the output, built from the same tiles at the engine's
   reported position (approximate timing is fine; the output is the truth).
 - Speed and position readout, story list to jump to.
-- Settings: font, size, margins, colours, reading-line height, mirror per
-  output, video device and format, scripts folder.
+- Settings: font, size, margins, colours, reading-line height,
+  jog wheel mapping, video device and format, scripts folder.
 - Settings and the current script are held on the server, so every browser
   agrees and a reload of the UI loses nothing.
 
@@ -234,7 +235,7 @@ wheel → server → engine needs no special latency handling.
 - Layout: render fixtures and check story offsets and tile count.
 - Engine motion: a fake frame clock; check position per field for given
   speed sequences, including easing and slow speeds.
-- Engine frames: headless sink renders against expected images (mirror,
+- Engine frames: headless sink renders against expected images (text,
   marker).
 - Place-keeping: reload an edited script, check the anchor stays at the
   reading-line.
