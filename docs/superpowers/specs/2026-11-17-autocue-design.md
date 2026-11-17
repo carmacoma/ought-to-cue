@@ -48,11 +48,26 @@ so the users are likely a racing broadcast team, but nothing here depends on it.
 
 - Output 1920x1080. Default format 1080i50; 1080p25, 1080p50 and 1080i59.94
   selectable. (Defaults are Claude's call: 50Hz region.)
-- Blackmagic DeckLink SDK (C++). On Linux it loads `libDeckLinkAPI.so` from
-  Blackmagic Desktop Video at run time. The SDK itself comes from Blackmagic's
-  website (registration needed); see "Left to the builder" on whether its
-  headers can be committed.
-- Linux playout machine with a DeckLink card and Desktop Video drivers.
+- Blackmagic DeckLink SDK (C++), API 16.0. On Linux `DeckLinkAPIDispatch.cpp`
+  loads `libDeckLinkAPI.so` from Desktop Video at run time (link `-ldl
+  -lpthread`; sample flags `-Wno-multichar -fno-rtti`). The SDK is **not
+  committed**: Brendan keeps it locally and supplies headers, manual text and
+  samples on request (licensing and handling in `carmacoma/decklinkExperiments`,
+  `sdk/README.md` and `docs/LICENSING.md`). The build takes the headers' path
+  (`SDK=/path/to/include`), as the spike there does.
+- Known hardware (from `decklinkExperiments`): a **DeckLink 8K Pro** on
+  **Ubuntu 24.04**, Desktop Video 16.5a1. 1080i50 there is upper field first.
+  The 8K Pro is SDI only (no HDMI): HDMI needs a different card or an
+  SDI-to-HDMI converter. The code is written to the SDK's standard interfaces
+  so any DeckLink card with an output works (Brendan, 2026-11-17: "we should
+  have some flexibility").
+- Prior work to build on: `decklinkExperiments/loopback/cpp/dl_output_spike.cpp`
+  (Brendan's own code, no SDK sample code copied) already does scheduled
+  playback on this card and ran six hours with no late or dropped frames.
+  Lessons recorded there that this design follows: the card's clock is the
+  master (it ran about 11 ppm slow against the host), so schedule from frame
+  completions, never from the system clock; keep a buffer of about 10 frames;
+  follow its stop sequence.
 - Development and CI happen on machines with no DeckLink card, so everything
   except the card driver must run and be testable without one.
 
@@ -173,7 +188,11 @@ position:
 ### Outputs (sinks)
 
 - **DeckLink:** scheduled playback on one DeckLink output, the same
-  unmirrored picture to SDI and HDMI where the card has both. Device and
+  unmirrored picture to SDI and HDMI where the card has both. Built from the
+  scheduled-output spike in `decklinkExperiments`; frame-completion results
+  (late, dropped) are counted and shown in the control UI. In 1080i50 the
+  two fields of a frame are drawn from scroll positions 20 ms apart, upper
+  field first. Device and
   format chosen in settings.
 - **Window:** a desktop window, for developing on a machine without a card.
 - **Headless:** no display; frames can be written to image files for tests
@@ -239,8 +258,9 @@ wheel → server → engine needs no special latency handling.
   marker).
 - Place-keeping: reload an edited script, check the anchor stays at the
   reading-line.
-- All of the above runs in CI without a DeckLink card. The DeckLink sink is
-  checked by hand on the playout machine.
+- All of the above runs in CI without a DeckLink card or the SDK headers:
+  the engine builds without the DeckLink sink when no SDK path is given. The
+  DeckLink sink is built and checked by hand on the playout machine.
 
 ## Calls made by Claude (to check)
 
@@ -254,8 +274,8 @@ wheel → server → engine needs no special latency handling.
   `.txt`, keyboard control, DeckLink output, place kept on reload), then the
   preview, the other formats and the jog wheel. (No first-use date or
   existing prompter was named, so this order is Claude's.)
-- Playout hardware (DeckLink model, Linux distribution) not yet named; the
-  build targets a current Ubuntu LTS and Desktop Video unless told otherwise.
+- Target Ubuntu 24.04, Desktop Video 16.5, SDK 16.0, as on the 8K Pro box;
+  the SDK stays out of the repo, as in `decklinkExperiments`.
 - White on black; one font and size; headings are story breaks.
 - Keep the place across reloads; no in-app editing.
 - Server holds settings and state; the engine is a separate process.
@@ -269,7 +289,5 @@ wheel → server → engine needs no special latency handling.
 - Tile size, IPC mechanism between server and engine (e.g. Unix socket for
   commands, shared memory for tiles), and the window toolkit.
 - The method for smooth slow motion.
-- Whether the DeckLink SDK headers can be committed (check the SDK licence);
-  if not, a documented path to point the build at a local SDK copy.
 - What the engine does with its speed if the server disappears (the picture
   must stay up either way).
