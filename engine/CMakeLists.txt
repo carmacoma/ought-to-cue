@@ -55,3 +55,25 @@ add_test(NAME scrolltest_rejects_narrow_strip
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME scrolltest_rejects_missing_strip
   COMMAND sh -c "$<TARGET_FILE:ought-scrolltest> --sink headless --strip /nonexistent.pgm --frames 1; test $? -eq 2")
+
+# DeckLink output (only with the SDK headers). The SDK's own dispatch file is compiled without -Werror.
+if(OTC_DECKLINK_SDK)
+  if(NOT EXISTS "${OTC_DECKLINK_SDK}/DeckLinkAPI.h" OR NOT EXISTS "${OTC_DECKLINK_SDK}/DeckLinkAPIDispatch.cpp")
+    message(FATAL_ERROR "OTC_DECKLINK_SDK=${OTC_DECKLINK_SDK} does not contain DeckLinkAPI.h and DeckLinkAPIDispatch.cpp")
+  endif()
+  add_library(otc_decklink_dispatch OBJECT "${OTC_DECKLINK_SDK}/DeckLinkAPIDispatch.cpp")
+  target_include_directories(otc_decklink_dispatch PRIVATE "${OTC_DECKLINK_SDK}")
+  target_compile_options(otc_decklink_dispatch PRIVATE -Wno-multichar -fno-rtti -w)
+
+  add_library(otc_decklink
+    src/sinks/decklink/decklink_sink.cpp
+    src/apps/scrolltest_decklink.cpp
+    $<TARGET_OBJECTS:otc_decklink_dispatch>)
+  target_include_directories(otc_decklink PUBLIC src "${OTC_DECKLINK_SDK}")
+  target_compile_options(otc_decklink PRIVATE ${OTC_WARNINGS} -Wno-multichar -fno-rtti)
+  target_link_libraries(otc_decklink PUBLIC otc_core ${CMAKE_DL_LIBS} Threads::Threads)
+
+  target_link_libraries(ought-scrolltest PRIVATE otc_decklink)
+  target_compile_definitions(ought-scrolltest PRIVATE OTC_HAVE_DECKLINK)
+  target_compile_options(ought-scrolltest PRIVATE -Wno-multichar)
+endif()
