@@ -1,6 +1,6 @@
 # Ought to Cue: autocue design
 
-Date: 2026-11-17. Status: draft for Brendan's review.
+Date: 2026-11-17. Status: for Brendan's approval.
 
 ## Intent
 
@@ -33,6 +33,7 @@ so the users are likely a racing broadcast team, but nothing here depends on it.
 - The jog wheel's own protocol: the adapter is written once the protocol is
   available. Until then only the actions it maps to are defined.
 - Several scripts on several outputs at once.
+- A mirrored output (the prompter monitor flips the picture).
 - Any link to the graphics POC.
 
 ## Anti-goals (a failure even if it works)
@@ -166,13 +167,13 @@ position:
 
 - Text strip, black background.
 - Reading-line marker (an arrow or band at a set height, a setting).
-- Optional horizontal mirror, set per output (prompter glass needs it; a
-  confidence monitor doesn't).
+- Never mirrored. There is one regular signal; professional prompter
+  monitors flip the picture themselves (Brendan, 2026-11-17).
 
 ### Outputs (sinks)
 
-- **DeckLink:** scheduled playback on one DeckLink output, same picture to
-  SDI and HDMI where the card has both. Device and format chosen in settings.
+- **DeckLink:** scheduled playback on one DeckLink output, the same
+  unmirrored picture to SDI and HDMI where the card has both. Device and format chosen in settings.
 - **Window:** a desktop window, for developing on a machine without a card.
 - **Headless:** no display; frames can be written to image files for tests
   and checked against expected images.
@@ -189,9 +190,31 @@ Every control source maps to the same actions:
 Sources:
 
 - The control UI's buttons and the keyboard (in the UI's browser).
-- The jog wheel, through an adapter in the server, once its protocol is
-  known. How it connects (USB HID, serial, network) is unknown. Assumption
-  to confirm: the wheel sets speed, not position.
+- The jog wheel, through an adapter in the server.
+
+The jog wheel (Brendan, 2026-11-17): **the speed of the text follows how far
+the wheel has been turned.** A candidate is the Ulanzi D100H: an endless,
+stepless dial with haptic feedback and three buttons, Bluetooth 5.0 (a
+dual-mode version also has USB-C). Ulanzi's own app is Windows and macOS
+only, so on Linux it is used in its standalone mode, where it sends ordinary
+input events. Claude's interpretation of "speed follows rotation" for an
+endless dial, to confirm on the device:
+
+- Each step clockwise adds a fixed amount of forward speed, each step back
+  takes it away; past zero the text runs backwards. The further from the
+  zero point, the faster.
+- One button stops the scroll and resets the zero point (pause); the other
+  two are next and previous story. Which button does what is a setting.
+
+The adapter reads the device's events directly from Linux's input system
+(evdev), taking the device exclusively so its keystrokes never reach other
+programs, and maps them to the actions above through a small config file
+(which event is a clockwise step, which is each button). That makes it
+work with any dial or shuttle that shows up as a keyboard, mouse or HID
+device, not just the D100H. What events the D100H actually sends in
+standalone mode isn't documented; the first job on real hardware is to
+record them. Because the wheel sets speed rather than position, the path
+wheel → server → engine needs no special latency handling.
 
 ### Control UI
 
@@ -221,7 +244,17 @@ Sources:
 ## Calls made by Claude (to check)
 
 - Repo split into `apps/control`, `server` (Node/TS), `engine` (C++), one repo.
-- Default 1080i50; one output; mirror per output.
+- Default 1080i50; one unmirrored output.
+- How "speed follows rotation" works on an endless dial, the button
+  assignments, and reading the wheel through evdev with a mapping file.
+- Build order: an early hardware test of the scroll on a real DeckLink card
+  and monitor, with test patterns and a step-by-step for whoever runs it,
+  before the motion code is built on. Then a minimum version (`.docx` and
+  `.txt`, keyboard control, DeckLink output, place kept on reload), then the
+  preview, the other formats and the jog wheel. (No first-use date or
+  existing prompter was named, so this order is Claude's.)
+- Playout hardware (DeckLink model, Linux distribution) not yet named; the
+  build targets a current Ubuntu LTS and Desktop Video unless told otherwise.
 - White on black; one font and size; headings are story breaks.
 - Keep the place across reloads; no in-app editing.
 - Server holds settings and state; the engine is a separate process.
