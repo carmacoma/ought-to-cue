@@ -221,28 +221,47 @@ Sources:
 - The jog wheel, through an adapter in the server.
 
 The jog wheel (Brendan, 2026-11-17): **the speed of the text follows how far
-the wheel has been turned.** A candidate is the Ulanzi D100H: an endless,
-stepless dial with haptic feedback and three buttons, Bluetooth 5.0 (a
-dual-mode version also has USB-C). Ulanzi's own app is Windows and macOS
-only, so on Linux it is used in its standalone mode, where it sends ordinary
-input events. Claude's interpretation of "speed follows rotation" for an
-endless dial, to confirm on the device:
+the wheel has been turned.** Two candidates so far, which work differently, so
+the adapter supports both kinds of control:
 
-- Each step clockwise adds a fixed amount of forward speed, each step back
-  takes it away; past zero the text runs backwards. The further from the
-  zero point, the faster.
-- One button stops the scroll and resets the zero point (pause); the other
-  two are next and previous story. Which button does what is a setting.
+- **Contour ShuttlePRO v2** (USB, wired): a spring-loaded outer shuttle ring
+  (about 7 positions each way, springs back to centre when let go), an endless
+  inner jog wheel with detents, and 15 buttons. Long supported on Linux.
+- **Ulanzi D100H** (Bluetooth 5.0; a dual-mode version also has USB-C): one
+  endless, stepless dial with haptic feedback and three buttons. Ulanzi's app
+  is Windows and macOS only, so on Linux it runs in standalone mode, sending
+  ordinary input events; which ones is undocumented.
 
-The adapter reads the device's events directly from Linux's input system
-(evdev), taking the device exclusively so its keystrokes never reach other
-programs, and maps them to the actions above through a small config file
-(which event is a clockwise step, which is each button). That makes it
-work with any dial or shuttle that shows up as a keyboard, mouse or HID
-device, not just the D100H. What events the D100H actually sends in
-standalone mode isn't documented; the first job on real hardware is to
-record them. Because the wheel sets speed rather than position, the path
+How each maps to the actions (Claude's call, to confirm on the devices):
+
+- **Spring-return ring (ShuttlePRO):** the ring's position sets the speed
+  directly, through a configurable curve (fine control near centre, faster at
+  the ends); centre, including letting go, is stop. Backwards past centre runs
+  the text backwards. The inner jog wheel nudges; buttons do next and previous
+  story, top, pause and speed presets.
+- **Endless dial (D100H):** each step clockwise adds a fixed amount of speed,
+  each step back takes it away; past zero the text runs backwards. One button
+  pauses and resets zero; the other two are next and previous story.
+- Which control and button does what is a setting.
+
+Reading the devices: the adapter reads Linux's input system (evdev) and takes
+the device exclusively, so its keystrokes never reach other programs, and
+falls back to raw HID reports (hidraw) where evdev loses information. Known
+case: the ShuttlePRO reports ring and jog positions as absolute values inside
+"relative" events, the jog counter wraps at 0-255, and the kernel can drop
+the return-to-centre event because it looks like "no movement". A missed
+return-to-centre would leave the text scrolling after the operator let go,
+so stopping on release must be reliable: if evdev can't guarantee it, read
+hidraw. A small mapping file per device model says which event is which.
+Recording each device's real events with `evtest` on the playout box is the
+first hardware job for the wheel.
+
+Because the wheel sets speed rather than position, the path
 wheel → server → engine needs no special latency handling.
+
+Claude's recommendation for the on-air device: the ShuttlePRO v2. It is wired
+(no Bluetooth dropouts on air), works on Linux without the vendor's app, and
+its spring-return ring means letting go stops the text.
 
 ### Control UI
 
@@ -274,8 +293,10 @@ wheel → server → engine needs no special latency handling.
 
 - Repo split into `apps/control`, `server` (Node/TS), `engine` (C++), one repo.
 - Default 1080i50; one unmirrored output.
-- How "speed follows rotation" works on an endless dial, the button
-  assignments, and reading the wheel through evdev with a mapping file.
+- How "speed follows rotation" works on each kind of wheel (spring-return
+  ring: position is speed; endless dial: steps add speed), the button
+  assignments, and reading wheels through evdev/hidraw with a mapping file
+  per model. Recommending the ShuttlePRO v2 for air.
 - Build order: an early hardware test of the scroll on a real DeckLink card
   and monitor, with test patterns and a step-by-step for whoever runs it,
   before the motion code is built on. Then a minimum version (`.docx` and
