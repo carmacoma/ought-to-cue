@@ -18,6 +18,7 @@ add_library(otc_core
   src/core/motion.cpp
   src/core/strip.cpp
   src/core/pgm.cpp
+  src/core/compositor.cpp
 )
 target_include_directories(otc_core PUBLIC src)
 target_compile_options(otc_core PRIVATE ${OTC_WARNINGS})
