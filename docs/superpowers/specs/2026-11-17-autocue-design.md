@@ -1,6 +1,6 @@
 # Ought to Cue: autocue design
 
-Date: 2026-11-17. Status: for Brendan's approval.
+Date: 2026-11-17. Status: approved by Brendan, 2026-11-17.
 
 ## Intent
 
