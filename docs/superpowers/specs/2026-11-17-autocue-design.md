@@ -55,12 +55,16 @@ so the users are likely a racing broadcast team, but nothing here depends on it.
   samples on request (licensing and handling in `carmacoma/decklinkExperiments`,
   `sdk/README.md` and `docs/LICENSING.md`). The build takes the headers' path
   (`SDK=/path/to/include`), as the spike there does.
-- Known hardware (from `decklinkExperiments`): a **DeckLink 8K Pro** on
-  **Ubuntu 24.04**, Desktop Video 16.5a1. 1080i50 there is upper field first.
-  The 8K Pro is SDI only (no HDMI): HDMI needs a different card or an
-  SDI-to-HDMI converter. The code is written to the SDK's standard interfaces
-  so any DeckLink card with an output works (Brendan, 2026-11-17: "we should
-  have some flexibility").
+- The autocue runs on **its own dedicated Linux box with a DeckLink card of
+  some kind, not the CasparCG box** (Brendan, 2026-11-17). The exact card isn't
+  chosen, so the code uses only the SDK's standard interfaces, picks the
+  device and connector from settings, and checks the card supports the chosen
+  mode (Brendan: "we should have some flexibility"). HDMI is available only if
+  the chosen card has it.
+- Reference hardware for the first tests (from `decklinkExperiments`): a
+  DeckLink 8K Pro on Ubuntu 24.04, Desktop Video 16.5a1, where 1080i50 is
+  upper field first. It is SDI only. It can be borrowed for a test only when
+  CasparCG isn't using it.
 - Prior work to build on: `decklinkExperiments/loopback/cpp/dl_output_spike.cpp`
   (Brendan's own code, no SDK sample code copied) already does scheduled
   playback on this card and ran six hours with no late or dropped frames.
