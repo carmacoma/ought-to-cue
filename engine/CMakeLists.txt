@@ -19,8 +19,11 @@ add_library(otc_core
   src/core/strip.cpp
   src/core/pgm.cpp
   src/core/compositor.cpp
+  src/core/scroll_source.cpp
 )
 target_include_directories(otc_core PUBLIC src)
+find_package(Threads REQUIRED)
+target_link_libraries(otc_core PUBLIC Threads::Threads)
 target_compile_options(otc_core PRIVATE ${OTC_WARNINGS})
 
 enable_testing()
