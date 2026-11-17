@@ -22,8 +22,10 @@ gap=60
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 
-# Split into paragraphs: para_0001, para_0002, ...
+# Split into paragraphs: para_0001, para_0002, ... (Windows line endings stripped first, so a blank
+# line that is just "\r" still separates paragraphs.)
 awk -v dir="$work" '
+  { sub(/\r$/, "") }
   NF == 0 { if (open) { close(f); open = 0 } next }
   { if (!open) { n++; f = sprintf("%s/para_%04d", dir, n); open = 1 } print > f }
 ' "$in"

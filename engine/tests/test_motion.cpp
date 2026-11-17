@@ -85,4 +85,31 @@ TEST(stops_at_limits_and_can_reverse)
 	CHECK(m.position() == 0);  // jumpTo clamps too
 }
 
+TEST(hitting_a_limit_resets_the_target)
+{
+	// Otherwise the operator has to undo the whole speed before the text can move back.
+	otc::Motion m;
+	m.setLimits(0, 500);
+	m.jumpTo(400);
+	m.setTargetSpeed(600);
+	for (int i = 0; i < 100; ++i)
+		m.advance(0.02);
+	CHECK(m.position() == 500);
+	CHECK(m.targetSpeed() == 0);
+	m.setTargetSpeed(m.targetSpeed() - 100);  // one step back
+	for (int i = 0; i < 25; ++i)
+		m.advance(0.02);
+	CHECK(m.position() < 500);
+}
+
+TEST(target_pointing_away_from_limit_is_kept)
+{
+	otc::Motion m;
+	m.setLimits(0, 500);
+	m.jumpTo(500);
+	m.setTargetSpeed(-50);
+	m.advance(0.02);
+	CHECK(m.targetSpeed() == -50);
+}
+
 TEST_MAIN()

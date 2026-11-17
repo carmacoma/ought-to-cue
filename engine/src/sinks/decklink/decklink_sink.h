@@ -39,6 +39,7 @@ public:
 	void stop();
 	DeckLinkStats stats() const;
 	bool playing() const;  // true once pre-roll finished and scheduled playback started
+	bool failed() const;   // true if output stopped on an error (scheduling, buffer access, start)
 	std::string deviceName() const;
 
 	struct Impl;  // public only so the SDK callback class in the .cpp can name it

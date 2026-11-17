@@ -189,6 +189,7 @@ struct DeckLinkSink::Impl
 	std::atomic<bool> stopping{false};
 	std::atomic<bool> playing{false};
 	std::atomic<bool> enabled{false};
+	std::atomic<bool> failed{false};
 	std::thread worker;
 	std::atomic<uint64_t> scheduled{0}, completed{0}, late{0}, dropped{0}, flushed{0};
 	uint64_t next = 0;
@@ -242,6 +243,7 @@ struct DeckLinkSink::Impl
 				}
 				if (!renderAndSchedule(f))
 				{
+					failed = true;
 					stopping = true;
 					break;
 				}
@@ -250,6 +252,7 @@ struct DeckLinkSink::Impl
 					if (output->StartScheduledPlayback(0, mode.timescale, 1.0) != S_OK)
 					{
 						std::fprintf(stderr, "StartScheduledPlayback failed\n");
+						failed = true;
 						stopping = true;
 						break;
 					}
@@ -469,6 +472,7 @@ DeckLinkStats DeckLinkSink::stats() const
 }
 
 bool DeckLinkSink::playing() const { return impl_->playing; }
+bool DeckLinkSink::failed() const { return impl_->failed; }
 
 std::string DeckLinkSink::deviceName() const { return impl_->device ? nameOf(impl_->device.get()) : std::string(); }
 }  // namespace otc

@@ -42,17 +42,22 @@ void Motion::advance(double dtSeconds)
 			accel_ = 0;
 		}
 		pos_ += h * speed_;
+		// At a limit, stop; and drop a target that still pushes outward, so one step back moves the text.
 		if (pos_ <= minY_)
 		{
 			pos_ = minY_;
 			if (speed_ < 0)
 				speed_ = accel_ = 0;
+			if (target_ < 0)
+				target_ = 0;
 		}
 		else if (pos_ >= maxY_)
 		{
 			pos_ = maxY_;
 			if (speed_ > 0)
 				speed_ = accel_ = 0;
+			if (target_ > 0)
+				target_ = 0;
 		}
 	}
 }

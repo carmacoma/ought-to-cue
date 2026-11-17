@@ -80,7 +80,22 @@ bool readPgm(const std::string& path, PgmImage& out, std::string& error)
 		error = path + ": only 8-bit PGM (maxval 255) is supported";
 		return false;
 	}
-	std::vector<uint8_t> px(static_cast<size_t>(w) * h);
+	// Check the data is really there before allocating, so a corrupt header can't ask for gigabytes.
+	const long dataStart = std::ftell(f.get());
+	if (dataStart < 0 || std::fseek(f.get(), 0, SEEK_END) != 0)
+	{
+		error = path + ": cannot read file";
+		return false;
+	}
+	const long fileEnd = std::ftell(f.get());
+	const unsigned long long need = static_cast<unsigned long long>(w) * static_cast<unsigned long long>(h);
+	if (fileEnd < dataStart || static_cast<unsigned long long>(fileEnd - dataStart) < need)
+	{
+		error = path + ": file is shorter than its header says (truncated?)";
+		return false;
+	}
+	std::fseek(f.get(), dataStart, SEEK_SET);
+	std::vector<uint8_t> px(static_cast<size_t>(need));
 	if (std::fread(px.data(), 1, px.size(), f.get()) != px.size())
 	{
 		error = path + ": file is shorter than its header says (truncated?)";

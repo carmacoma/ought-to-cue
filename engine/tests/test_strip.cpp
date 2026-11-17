@@ -62,6 +62,15 @@ TEST(pgm_round_trip_and_errors)
 	CHECK(!otc::readPgm("missing.pgm", back, err) && !err.empty());
 }
 
+TEST(pgm_huge_header_is_an_error_not_a_crash)
+{
+	// A header promising far more pixels than the file holds must not allocate them first.
+	writeFile("huge.pgm", "P5\n1920 999999999\n255\n" + std::string(100, '\0'));
+	otc::PgmImage back;
+	std::string err;
+	CHECK(!otc::readPgm("huge.pgm", back, err) && !err.empty());
+}
+
 TEST(luma_of_frame_extracts_y)
 {
 	std::vector<uint8_t> frame(4 * 2, 0);  // 2x2 UYVY with rowBytes 4

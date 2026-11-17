@@ -168,6 +168,12 @@ int runDeckLinkScrollTest(ScrollSource& src, const VideoMode& mode, int device, 
 	{
 		if (seconds > 0 && std::chrono::duration<double>(Clock::now() - t0).count() >= seconds)
 			break;
+		if (sink.failed())
+		{
+			std::printf("%s", tty ? "\r\x1b[K" : "");
+			std::fprintf(stderr, "output stopped on a DeckLink error (see above)\n");
+			break;
+		}
 		const Key key = term.active() ? readKey(50) : (poll(nullptr, 0, 50), Key::None);
 		if (key == Key::Quit)
 			break;
@@ -195,6 +201,8 @@ int runDeckLinkScrollTest(ScrollSource& src, const VideoMode& mode, int device, 
 	if (tty)
 		printStatus(mode, bufferFrames, src, sink.stats(), true);
 	std::printf("%s\n", finalReportLine(countsOf(sink.stats()), localStamp()).c_str());
+	if (sink.failed())
+		return 1;
 	return 0;
 }
 }  // namespace otc

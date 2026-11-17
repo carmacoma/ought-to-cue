@@ -78,3 +78,8 @@ if(OTC_DECKLINK_SDK)
   target_compile_definitions(ought-scrolltest PRIVATE OTC_HAVE_DECKLINK)
   target_compile_options(ought-scrolltest PRIVATE -Wno-multichar)
 endif()
+
+# The text-strip tool (skipped where ImageMagick isn't installed).
+add_test(NAME make_text_strip_handles_crlf
+  COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_make_text_strip.sh ${CMAKE_CURRENT_SOURCE_DIR}/tools/make_text_strip.sh)
+set_tests_properties(make_text_strip_handles_crlf PROPERTIES SKIP_RETURN_CODE 77)

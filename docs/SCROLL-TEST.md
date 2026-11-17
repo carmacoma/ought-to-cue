@@ -33,6 +33,8 @@ If it still runs from the script instead:
 git clone -b claude/brave-heisenberg-6wl6wj https://github.com/carmacoma/ought-to-cue ~/ought-to-cue
 ```
 
+(If it asks for credentials, use whatever you used to clone `decklinkExperiments` on this box.)
+
 Copy the SDK 16.0 headers into the repo's git-ignored `sdk/include` folder. Change the source path to wherever
 your unpacked SDK is (the folder that holds `DeckLinkAPI.h`):
 
@@ -66,6 +68,12 @@ shows 1080i50 the way the prompter monitor will is best: some monitors deinterla
 judder that isn't in the signal.
 
 ## 4. Make a strip of real text
+
+The strip tool uses ImageMagick. If `convert -version` says it isn't installed:
+
+```bash
+sudo apt install -y imagemagick
+```
 
 Any plain-text file works; a real script is best. One paragraph per block of text, blank lines between:
 
@@ -114,30 +122,39 @@ back-and-forth twitching. Twitching means a field-order problem.
 ```
 
 **D. Buffer depth.** Run at 150 px/s for about a minute each with `--buffer 2`, `3`, `4` and `10`. Note late and
-dropped from the status line, and how laggy Up/Down feel.
+dropped from the status line, and how laggy Up/Down feel. Judge the lag by when the text *starts* to change speed
+after a key press, not when it reaches the new speed: every speed change also eases in over about 0.4 s, on
+purpose.
 
 ```bash
 ~/ought-to-cue/build-dl/ought-scrolltest --device 0 --strip /tmp/script.pgm --speed 150 --buffer 2
 ```
 
-**E. Ten-minute loopback run.** Cable **SDI 2 -> SDI 3** (as in the earlier loopback tests). Start the capture
-from your `decklinkExperiments` checkout:
+**E. Ten-minute loopback run.** Cable **SDI 2 -> SDI 3** (as in the earlier loopback tests). First note where
+your `decklinkExperiments` checkout is (the folder name's capitals depend on how it was cloned):
 
 ```bash
-cd ~/decklinkExperiments/loopback/python && nohup python3 decklink_capture.py --log /tmp/otc-capture.log > /tmp/otc-capture.out 2>&1 &
+DX=$(ls -d ~/decklink[Ee]xperiments | head -1); echo "$DX"
 ```
 
-Then the scroll test, writing to a log file (with the output redirected it prints a report line every 10 s
-instead of the status line, and the keys don't work):
+It should print the folder. Start the capture from it:
 
 ```bash
-~/ought-to-cue/build-dl/ought-scrolltest --device 0 --strip /tmp/script.pgm --speed 100 --counter --buffer 4 --seconds 600 > /tmp/otc-run.log 2>&1
+cd "$DX/loopback/python" && nohup python3 decklink_capture.py --log /tmp/otc-capture.log > /tmp/otc-capture.out 2>&1 &
+```
+
+Then the scroll test, writing to a log file. With the output redirected it prints a report line every 10 s
+instead of the status line; don't press any keys during this run. The built-in text pattern at 60 px/s keeps
+scrolling for the whole 10 minutes (a shorter real-text strip would reach its end and stop):
+
+```bash
+~/ought-to-cue/build-dl/ought-scrolltest --device 0 --pattern text --speed 60 --counter --buffer 4 --seconds 600 > /tmp/otc-run.log 2>&1
 ```
 
 When it returns (10 minutes), summarise:
 
 ```bash
-~/decklinkExperiments/loopback/tools/summarize_run.sh --stop-capture /tmp/otc-capture.log /tmp/otc-run.log /tmp/otc-capture.out
+"$DX/loopback/tools/summarize_run.sh" --stop-capture /tmp/otc-capture.log /tmp/otc-run.log /tmp/otc-capture.out
 ```
 
 Expected: `PASS`. (If D showed the buffer needs more than 4, use that value here.)
@@ -176,6 +193,6 @@ Paste these back to Claude:
 | D | 150 | | 3 | lag feel: | | |
 | D | 150 | | 4 | lag feel: | | |
 | D | 150 | | 10 | lag feel: | | |
-| E | 100, 10 minutes | | | summary verdict: | | |
+| E | 60, 10 minutes | | | summary verdict: | | |
 
 Anything else you noticed (font size, the marker, how the easing feels) is useful too.
