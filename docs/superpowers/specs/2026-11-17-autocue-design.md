@@ -61,10 +61,14 @@ so the users are likely a racing broadcast team, but nothing here depends on it.
   device and connector from settings, and checks the card supports the chosen
   mode (Brendan: "we should have some flexibility"). HDMI is available only if
   the chosen card has it.
-- Reference hardware for the first tests (from `decklinkExperiments`): a
-  DeckLink 8K Pro on Ubuntu 24.04, Desktop Video 16.5a1, where 1080i50 is
-  upper field first. It is SDI only. It can be borrowed for a test only when
-  CasparCG isn't using it.
+- Testing happens on the CasparCG box until the dedicated box exists
+  (Brendan, 2026-11-17): a DeckLink 8K Pro on Ubuntu 24.04, Desktop Video
+  16.5a1, where 1080i50 is upper field first; SDI only. A test takes one of
+  its outputs with CasparCG stopped, as the loopback tests in
+  `decklinkExperiments` do, so tests are run by Brendan at times that suit
+  the graphics work. That repo's loopback capture (an SDI cable from an
+  output back into an input) can also record the autocue's output for
+  checking frame by frame.
 - Prior work to build on: `decklinkExperiments/loopback/cpp/dl_output_spike.cpp`
   (Brendan's own code, no SDK sample code copied) already does scheduled
   playback on this card and ran six hours with no late or dropped frames.
