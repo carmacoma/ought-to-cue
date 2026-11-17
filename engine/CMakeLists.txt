@@ -20,6 +20,7 @@ add_library(otc_core
   src/core/pgm.cpp
   src/core/compositor.cpp
   src/core/scroll_source.cpp
+  src/sinks/headless_sink.cpp
 )
 target_include_directories(otc_core PUBLIC src)
 find_package(Threads REQUIRED)
@@ -36,3 +37,21 @@ foreach(test_src ${OTC_TESTS})
   target_compile_options(${test_name} PRIVATE ${OTC_WARNINGS})
   add_test(NAME ${test_name} COMMAND ${test_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 endforeach()
+
+# The scroll test program. DeckLink output only when built with the SDK.
+add_executable(ought-scrolltest src/apps/scrolltest_main.cpp)
+target_link_libraries(ought-scrolltest PRIVATE otc_core)
+target_compile_options(ought-scrolltest PRIVATE ${OTC_WARNINGS})
+
+# Smoke tests of the command line (exit codes: 0 ok, 2 bad usage or input).
+add_test(NAME scrolltest_headless_runs
+  COMMAND ought-scrolltest --sink headless --pattern bars --speed 100 --frames 20)
+add_test(NAME scrolltest_rejects_unknown_mode
+  COMMAND sh -c "$<TARGET_FILE:ought-scrolltest> --sink headless --mode 720p --frames 1; test $? -eq 2")
+add_test(NAME scrolltest_rejects_unknown_option
+  COMMAND sh -c "$<TARGET_FILE:ought-scrolltest> --sink headless --bogus; test $? -eq 2")
+add_test(NAME scrolltest_rejects_narrow_strip
+  COMMAND sh -c "printf 'P5\\n10 1\\n255\\n0123456789' > narrow.pgm && $<TARGET_FILE:ought-scrolltest> --sink headless --strip narrow.pgm --frames 1; test $? -eq 2"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_test(NAME scrolltest_rejects_missing_strip
+  COMMAND sh -c "$<TARGET_FILE:ought-scrolltest> --sink headless --strip /nonexistent.pgm --frames 1; test $? -eq 2")
