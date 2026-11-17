@@ -1,0 +1,11 @@
+# Build output
+build/
+build-*/
+engine/out/
+
+# Blackmagic DeckLink SDK: kept locally, never committed (licence). Put the headers in sdk/include.
+sdk/*
+!sdk/README.md
+
+# Agent scratch
+.superpowers/
